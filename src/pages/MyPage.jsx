@@ -58,9 +58,15 @@ export default function MyPage() {
           </Typography>
         </ButtonBase>
 
-        <Box sx={{ display: 'flex', gap: 1, mb: 3 }}>
+        <Box sx={{ display: 'flex', gap: 1, mb: 3, flexWrap: 'wrap' }}>
           <Button variant="outlined" onClick={() => navigate('/friends')}>
             팔로잉/팔로워 관리
+          </Button>
+          <Button variant="outlined" onClick={() => navigate('/ranking')}>
+            랭킹
+          </Button>
+          <Button variant="outlined" onClick={() => navigate('/settings')}>
+            설정
           </Button>
           <Button variant="outlined" onClick={handleLogout}>
             로그아웃

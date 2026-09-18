@@ -2,7 +2,7 @@ import { createTheme } from '@mui/material/styles';
 
 // docs/미니 SNS 프로젝트/color-theme.json (Material Theme Builder export) 기반 팔레트
 const theme = createTheme({
-  cssVariables: { colorSchemeSelector: 'media' },
+  cssVariables: { colorSchemeSelector: 'class' },
   colorSchemes: {
     light: {
       palette: {

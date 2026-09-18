@@ -47,7 +47,10 @@ async function insertProfile(userId, profile) {
     terms_agreed_at: now,
     privacy_agreed_at: now,
   });
-  return error;
+  if (error) return error;
+
+  const { error: settingsError } = await supabase.from('og_user_settings').insert({ user_id: userId });
+  return settingsError;
 }
 
 /** 이미 사용 중인 닉네임 또는 Riot ID인지 확인한다 (가입 전 사전 검증용). */
@@ -124,4 +127,59 @@ export async function fetchProfile(userId) {
   const { data, error } = await supabase.from('og_users').select('*').eq('id', userId).maybeSingle();
   if (error) throw error;
   return data;
+}
+
+/** @param {string} newPassword - 변경할 새 비밀번호 [Required] */
+export async function updatePassword(newPassword) {
+  const { error } = await supabase.auth.updateUser({ password: newPassword });
+  if (error) throw error;
+}
+
+/**
+ * 이미 다른 계정이 쓰고 있는 Riot ID인지 확인한다 (본인 계정은 제외).
+ * @param {string} userId - 검사에서 제외할 본인 유저 id [Required]
+ * @param {string} riotGameName - 확인할 소환사명 [Required]
+ * @param {string} riotTagLine - 확인할 태그 [Required]
+ */
+async function findDuplicateRiotId(userId, riotGameName, riotTagLine) {
+  const puuid = generateMockPuuid(riotGameName, riotTagLine);
+  const { data } = await supabase.from('og_users').select('id').eq('puuid', puuid).neq('id', userId).maybeSingle();
+  return Boolean(data);
+}
+
+/**
+ * @param {object} params - 재연동할 Riot ID 데이터 [Required]
+ * params: { userId, riotGameName, riotTagLine }
+ */
+export async function relinkRiotId({ userId, riotGameName, riotTagLine }) {
+  const isDuplicate = await findDuplicateRiotId(userId, riotGameName, riotTagLine);
+  if (isDuplicate) return { error: { message: 'DUPLICATE_RIOT_ID' } };
+
+  const { data, error } = await supabase
+    .from('og_users')
+    .update({
+      riot_game_name: riotGameName,
+      riot_tag_line: riotTagLine,
+      puuid: generateMockPuuid(riotGameName, riotTagLine),
+      riot_verified: false,
+    })
+    .eq('id', userId)
+    .select()
+    .single();
+  if (error) return { error };
+  return { data };
+}
+
+/** @param {string} userId - 탈퇴 처리할 유저 id [Required] */
+export async function withdrawAccount(userId) {
+  const { error } = await supabase
+    .from('og_users')
+    .update({
+      deleted_at: new Date().toISOString(),
+      nickname: `탈퇴 사용자-${userId.slice(0, 8)}`,
+      bio: null,
+      profile_image_url: null,
+    })
+    .eq('id', userId);
+  if (error) throw error;
 }

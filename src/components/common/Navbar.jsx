@@ -14,6 +14,8 @@ import SearchIcon from '@mui/icons-material/Search';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import PersonIcon from '@mui/icons-material/Person';
 import NotificationsIcon from '@mui/icons-material/Notifications';
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
+import SettingsIcon from '@mui/icons-material/Settings';
 import useAuth from '../../hooks/useAuth';
 import { fetchUnreadCount } from '../../lib/notifications';
 
@@ -53,10 +55,16 @@ export default function Navbar() {
           </Typography>
           {user ? (
             <Box>
+              <IconButton color="inherit" aria-label="랭킹" onClick={() => navigate('/ranking')}>
+                <EmojiEventsIcon />
+              </IconButton>
               <IconButton color="inherit" aria-label="알림" onClick={() => navigate('/notifications')}>
                 <Badge badgeContent={unreadCount} color="error">
                   <NotificationsIcon />
                 </Badge>
+              </IconButton>
+              <IconButton color="inherit" aria-label="설정" onClick={() => navigate('/settings')}>
+                <SettingsIcon />
               </IconButton>
             </Box>
           ) : null}

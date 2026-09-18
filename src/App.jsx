@@ -2,6 +2,7 @@ import { Routes, Route, useLocation } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Navbar from './components/common/Navbar';
 import ProtectedRoute from './components/common/ProtectedRoute';
+import ThemeModeSync from './components/common/ThemeModeSync';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import TermsPage from './pages/TermsPage';
@@ -13,6 +14,8 @@ import SearchPage from './pages/SearchPage';
 import FriendsPage from './pages/FriendsPage';
 import UserProfilePage from './pages/UserProfilePage';
 import NotificationsPage from './pages/NotificationsPage';
+import SettingsPage from './pages/SettingsPage';
+import LeaderboardPage from './pages/LeaderboardPage';
 
 const NO_NAVBAR_PATHS = ['/login', '/signup'];
 
@@ -22,6 +25,7 @@ export default function App() {
 
   return (
     <Box sx={{ width: '100%', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <ThemeModeSync />
       {showNavbar ? <Navbar /> : null}
       <Box sx={{ flexGrow: 1 }}>
         <Routes>
@@ -61,6 +65,22 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <NotificationsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <SettingsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/ranking"
+            element={
+              <ProtectedRoute>
+                <LeaderboardPage />
               </ProtectedRoute>
             }
           />
