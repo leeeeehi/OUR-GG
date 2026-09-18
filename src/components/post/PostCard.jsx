@@ -1,14 +1,16 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import Card from '@mui/material/Card';
 import CardActionArea from '@mui/material/CardActionArea';
 import Box from '@mui/material/Box';
 import Avatar from '@mui/material/Avatar';
 import Typography from '@mui/material/Typography';
 import Chip from '@mui/material/Chip';
+import Link from '@mui/material/Link';
 import { getChampionById, getChampionIconUrl } from '../../lib/mockRiotApi';
 import { formatRelativeTime } from '../../utils/format-date';
 import { formatDuration } from '../../utils/format-duration';
 import useDdragonVersion from '../../hooks/useDdragonVersion';
+import ReactionBar from './ReactionBar';
 
 /**
  * Props:
@@ -33,12 +35,19 @@ export default function PostCard({ post }) {
     >
       <CardActionArea onClick={() => navigate(`/posts/${post.id}`)} sx={{ p: { xs: 1.5, md: 2 } }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-          <Avatar src={post.author?.profile_image_url ?? undefined} sx={{ width: 32, height: 32 }}>
-            {post.author?.nickname?.[0] ?? '?'}
-          </Avatar>
-          <Typography sx={{ fontWeight: 600, fontSize: { xs: '0.9rem', md: '1rem' } }}>
-            {post.author?.nickname ?? '알 수 없음'}
-          </Typography>
+          <Link
+            component={RouterLink}
+            to={`/users/${post.user_id}`}
+            onClick={(e) => e.stopPropagation()}
+            sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'text.primary', textDecoration: 'none' }}
+          >
+            <Avatar src={post.author?.profile_image_url ?? undefined} sx={{ width: 32, height: 32 }}>
+              {post.author?.nickname?.[0] ?? '?'}
+            </Avatar>
+            <Typography sx={{ fontWeight: 600, fontSize: { xs: '0.9rem', md: '1rem' } }}>
+              {post.author?.nickname ?? '알 수 없음'}
+            </Typography>
+          </Link>
           <Typography sx={{ fontSize: '0.8rem', color: 'text.secondary' }}>
             · {formatRelativeTime(post.created_at)}
           </Typography>
@@ -78,6 +87,10 @@ export default function PostCard({ post }) {
         {post.caption ? (
           <Typography sx={{ mt: 1.5, fontSize: { xs: '0.9rem', md: '1rem' } }}>{post.caption}</Typography>
         ) : null}
+
+        <Box sx={{ mt: 1.5 }}>
+          <ReactionBar postId={post.id} counts={post.reaction_counts} mode="readonly" />
+        </Box>
       </CardActionArea>
     </Card>
   );

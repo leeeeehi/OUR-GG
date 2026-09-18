@@ -10,6 +10,9 @@ import PostDetailPage from './pages/PostDetailPage';
 import PostCreatePage from './pages/PostCreatePage';
 import MyPage from './pages/MyPage';
 import SearchPage from './pages/SearchPage';
+import FriendsPage from './pages/FriendsPage';
+import UserProfilePage from './pages/UserProfilePage';
+import NotificationsPage from './pages/NotificationsPage';
 
 const NO_NAVBAR_PATHS = ['/login', '/signup'];
 
@@ -41,6 +44,23 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <MyPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/friends"
+            element={
+              <ProtectedRoute>
+                <FriendsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/users/:userId" element={<UserProfilePage />} />
+          <Route
+            path="/notifications"
+            element={
+              <ProtectedRoute>
+                <NotificationsPage />
               </ProtectedRoute>
             }
           />

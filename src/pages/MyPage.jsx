@@ -1,15 +1,18 @@
 import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
+import ButtonBase from '@mui/material/ButtonBase';
 import CircularProgress from '@mui/material/CircularProgress';
 import Divider from '@mui/material/Divider';
 import Chip from '@mui/material/Chip';
 import useAuth from '../hooks/useAuth';
 import usePosts from '../hooks/usePosts';
 import { fetchPostsByUser } from '../lib/posts';
+import { fetchFollowCounts } from '../lib/follows';
 import { signOut } from '../lib/auth';
 import PostCard from '../components/post/PostCard';
 import EmptyState from '../components/ui/EmptyState';
@@ -18,6 +21,11 @@ export default function MyPage() {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
   const { posts, loading } = usePosts(() => fetchPostsByUser(user.id), [user.id]);
+  const [counts, setCounts] = useState({ followerCount: 0, followingCount: 0 });
+
+  useEffect(() => {
+    fetchFollowCounts(user.id).then(setCounts);
+  }, [user.id]);
 
   async function handleLogout() {
     await signOut();
@@ -44,9 +52,20 @@ export default function MyPage() {
           </Box>
         </Box>
 
-        <Button variant="outlined" onClick={handleLogout} sx={{ mb: 3 }}>
-          로그아웃
-        </Button>
+        <ButtonBase onClick={() => navigate('/friends')} sx={{ mb: 2, borderRadius: 1 }}>
+          <Typography sx={{ fontSize: '0.9rem', color: 'text.secondary' }}>
+            팔로워 {counts.followerCount} · 팔로잉 {counts.followingCount}
+          </Typography>
+        </ButtonBase>
+
+        <Box sx={{ display: 'flex', gap: 1, mb: 3 }}>
+          <Button variant="outlined" onClick={() => navigate('/friends')}>
+            팔로잉/팔로워 관리
+          </Button>
+          <Button variant="outlined" onClick={handleLogout}>
+            로그아웃
+          </Button>
+        </Box>
 
         <Divider sx={{ mb: 2 }} />
 

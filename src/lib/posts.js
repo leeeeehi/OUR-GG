@@ -15,6 +15,19 @@ export async function fetchPublicPosts(limit = 30) {
   return data;
 }
 
+/** @param {Array<string>} followingIds - 내가 팔로우한 유저 id 목록 [Required] */
+export async function fetchFollowingFeed(followingIds) {
+  if (!followingIds || followingIds.length === 0) return [];
+  const { data, error } = await supabase
+    .from('og_posts')
+    .select(POST_SELECT)
+    .in('user_id', followingIds)
+    .order('created_at', { ascending: false })
+    .limit(30);
+  if (error) throw error;
+  return data;
+}
+
 /** @param {string} userId - 게시물 작성자 id [Required] */
 export async function fetchPostsByUser(userId) {
   const { data, error } = await supabase

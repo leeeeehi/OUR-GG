@@ -8,6 +8,8 @@ import Alert from '@mui/material/Alert';
 import Divider from '@mui/material/Divider';
 import Chip from '@mui/material/Chip';
 import Link from '@mui/material/Link';
+import IconButton from '@mui/material/IconButton';
+import FlagOutlinedIcon from '@mui/icons-material/FlagOutlined';
 import { getChampionById, getChampionIconUrl } from '../lib/mockRiotApi';
 import { fetchPostById, fetchComments, createComment } from '../lib/posts';
 import { formatRelativeTime } from '../utils/format-date';
@@ -16,6 +18,8 @@ import useAuth from '../hooks/useAuth';
 import useDdragonVersion from '../hooks/useDdragonVersion';
 import CommentList from '../components/post/CommentList';
 import CommentForm from '../components/post/CommentForm';
+import ReactionBar from '../components/post/ReactionBar';
+import ReportDialog from '../components/post/ReportDialog';
 
 export default function PostDetailPage() {
   const { postId } = useParams();
@@ -28,6 +32,7 @@ export default function PostDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [isReportOpen, setIsReportOpen] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -98,7 +103,7 @@ export default function PostDetailPage() {
             alt={champion.name}
             sx={{ width: 64, height: 64, borderRadius: '50%' }}
           />
-          <Box>
+          <Box sx={{ flexGrow: 1, minWidth: 0 }}>
             <Chip
               size="small"
               label={post.is_win ? '승리' : '패배'}
@@ -114,9 +119,17 @@ export default function PostDetailPage() {
             </Typography>
             <Typography sx={{ fontSize: '0.85rem', color: 'text.secondary' }}>
               {post.game_mode} · {formatDuration(post.game_duration)} · {formatRelativeTime(post.created_at)} ·
-              작성자 {post.author?.nickname}
+              작성자{' '}
+              <Link component={RouterLink} to={`/users/${post.user_id}`}>
+                {post.author?.nickname}
+              </Link>
             </Typography>
           </Box>
+          {user ? (
+            <IconButton aria-label="게시물 신고" onClick={() => setIsReportOpen(true)}>
+              <FlagOutlinedIcon fontSize="small" />
+            </IconButton>
+          ) : null}
         </Box>
 
         {post.caption ? (
@@ -126,6 +139,10 @@ export default function PostDetailPage() {
         <Typography sx={{ fontSize: '0.9rem', color: 'text.secondary', mb: 1 }}>
           딜량 {post.damage_dealt?.toLocaleString?.() ?? post.damage_dealt}
         </Typography>
+
+        <ReactionBar postId={post.id} counts={post.reaction_counts} mode="interactive" />
+
+        <ReportDialog open={isReportOpen} onClose={() => setIsReportOpen(false)} targetType="post" targetId={post.id} />
 
         <Divider sx={{ my: 2 }} />
 

@@ -90,6 +90,7 @@ export default function PostCreatePage() {
               size="small"
             >
               <ToggleButton value="public">전체공개</ToggleButton>
+              <ToggleButton value="friends">친구공개</ToggleButton>
               <ToggleButton value="private">비공개</ToggleButton>
             </ToggleButtonGroup>
           </Box>
