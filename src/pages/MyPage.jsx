@@ -16,6 +16,7 @@ import { fetchFollowCounts } from '../lib/follows';
 import { signOut } from '../lib/auth';
 import PostCard from '../components/post/PostCard';
 import EmptyState from '../components/ui/EmptyState';
+import RiotLinkNotice from '../components/common/RiotLinkNotice';
 
 export default function MyPage() {
   const navigate = useNavigate();
@@ -35,6 +36,7 @@ export default function MyPage() {
   return (
     <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center', py: { xs: 2, md: 4 }, pb: { xs: 10, md: 10 } }}>
       <Container maxWidth="sm" sx={{ px: { xs: 2, md: 3 } }}>
+        <RiotLinkNotice />
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
           <Avatar src={profile?.profile_image_url ?? undefined} sx={{ width: 64, height: 64 }}>
             {profile?.nickname?.[0] ?? '?'}

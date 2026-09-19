@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { generateMockPuuid } from './mockRiotApi';
+import { lookupRiotId } from './riotApi';
 
 const PENDING_SIGNUP_KEY = 'ourgg_pending_signup';
 
@@ -31,8 +31,22 @@ function clearPendingProfile() {
 }
 
 /**
+ * Riot ID가 실제로 존재하는지 확인해 puuid와 정식 표기를 얻는다.
+ * 실패 시 예외 대신 { error: { message: 오류코드 } } 형태로 반환한다.
+ * @param {string} gameName - 소환사명 [Required]
+ * @param {string} tagLine - 태그 [Required]
+ */
+async function resolveRiotId(gameName, tagLine) {
+  try {
+    return { data: await lookupRiotId(gameName, tagLine) };
+  } catch (err) {
+    return { error: { message: err?.code ?? 'RIOT_UNAVAILABLE' } };
+  }
+}
+
+/**
  * @param {string} userId - Supabase auth 유저 id [Required]
- * @param {object} profile - og_users insert에 사용할 프로필 필드 [Required]
+ * @param {object} profile - og_users insert에 사용할 프로필 필드 (puuid는 Riot에서 확인된 값) [Required]
  */
 async function insertProfile(userId, profile) {
   const now = new Date().toISOString();
@@ -42,7 +56,7 @@ async function insertProfile(userId, profile) {
     birth_date: profile.birthDate,
     riot_game_name: profile.riotGameName,
     riot_tag_line: profile.riotTagLine,
-    puuid: generateMockPuuid(profile.riotGameName, profile.riotTagLine),
+    puuid: profile.puuid,
     riot_verified: false,
     terms_agreed_at: now,
     privacy_agreed_at: now,
@@ -57,8 +71,7 @@ async function insertProfile(userId, profile) {
  * 이미 사용 중인 닉네임 또는 Riot ID인지 확인한다 (가입 전 사전 검증용).
  * 닉네임에 쉼표 등이 들어가도 필터 파싱이 깨지지 않도록 .or() 문자열 조합 대신 조건별로 조회한다.
  */
-async function findDuplicateProfile(nickname, riotGameName, riotTagLine) {
-  const puuid = generateMockPuuid(riotGameName, riotTagLine);
+async function findDuplicateProfile(nickname, puuid) {
   const [puuidResult, nicknameResult] = await Promise.all([
     supabase.from('og_users').select('id').eq('puuid', puuid).limit(1),
     supabase.from('og_users').select('id').eq('nickname', nickname).limit(1),
@@ -69,20 +82,30 @@ async function findDuplicateProfile(nickname, riotGameName, riotTagLine) {
 }
 
 /**
- * 회원가입: 닉네임/Riot ID 중복을 먼저 확인한 뒤 Supabase Auth 계정을 생성한다.
+ * 회원가입: Riot ID가 실제로 존재하는지 확인하고, 닉네임/Riot ID 중복을 확인한 뒤 Supabase Auth 계정을 생성한다.
  * 세션이 즉시 발급되면 프로필까지 함께 생성한다.
  * (이메일 인증이 켜진 프로젝트라면 세션이 없어 프로필 생성은 최초 로그인 시점으로 미뤄진다)
+ * 실패 시 error.message에 DUPLICATE_RIOT_ID / DUPLICATE_NICKNAME / RIOT_NOT_FOUND 등의 코드가 담긴다.
  * @param {object} params - { email, password, nickname, birthDate, riotGameName, riotTagLine } [Required]
  */
 export async function signUp({ email, password, nickname, birthDate, riotGameName, riotTagLine }) {
-  const duplicate = await findDuplicateProfile(nickname, riotGameName, riotTagLine);
+  const riot = await resolveRiotId(riotGameName, riotTagLine);
+  if (riot.error) return { error: riot.error };
+
+  const duplicate = await findDuplicateProfile(nickname, riot.data.puuid);
   if (duplicate === 'riotId') return { error: { message: 'DUPLICATE_RIOT_ID' } };
   if (duplicate === 'nickname') return { error: { message: 'DUPLICATE_NICKNAME' } };
 
   const { data, error } = await supabase.auth.signUp({ email, password });
   if (error) return { error };
 
-  const profile = { nickname, birthDate, riotGameName, riotTagLine };
+  const profile = {
+    nickname,
+    birthDate,
+    riotGameName: riot.data.gameName,
+    riotTagLine: riot.data.tagLine,
+    puuid: riot.data.puuid,
+  };
 
   if (data.session) {
     const insertError = await insertProfile(data.user.id, profile);
@@ -145,11 +168,9 @@ export async function updatePassword(newPassword) {
 /**
  * 이미 다른 계정이 쓰고 있는 Riot ID인지 확인한다 (본인 계정은 제외).
  * @param {string} userId - 검사에서 제외할 본인 유저 id [Required]
- * @param {string} riotGameName - 확인할 소환사명 [Required]
- * @param {string} riotTagLine - 확인할 태그 [Required]
+ * @param {string} puuid - 확인할 Riot puuid [Required]
  */
-async function findDuplicateRiotId(userId, riotGameName, riotTagLine) {
-  const puuid = generateMockPuuid(riotGameName, riotTagLine);
+async function findDuplicateRiotId(userId, puuid) {
   const { data } = await supabase.from('og_users').select('id').eq('puuid', puuid).neq('id', userId).maybeSingle();
   return Boolean(data);
 }
@@ -159,15 +180,18 @@ async function findDuplicateRiotId(userId, riotGameName, riotTagLine) {
  * params: { userId, riotGameName, riotTagLine }
  */
 export async function relinkRiotId({ userId, riotGameName, riotTagLine }) {
-  const isDuplicate = await findDuplicateRiotId(userId, riotGameName, riotTagLine);
+  const riot = await resolveRiotId(riotGameName, riotTagLine);
+  if (riot.error) return { error: riot.error };
+
+  const isDuplicate = await findDuplicateRiotId(userId, riot.data.puuid);
   if (isDuplicate) return { error: { message: 'DUPLICATE_RIOT_ID' } };
 
   const { data, error } = await supabase
     .from('og_users')
     .update({
-      riot_game_name: riotGameName,
-      riot_tag_line: riotTagLine,
-      puuid: generateMockPuuid(riotGameName, riotTagLine),
+      riot_game_name: riot.data.gameName,
+      riot_tag_line: riot.data.tagLine,
+      puuid: riot.data.puuid,
       riot_verified: false,
     })
     .eq('id', userId)

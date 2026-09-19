@@ -2,6 +2,7 @@ import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 import Divider from '@mui/material/Divider';
+import RiotDisclaimer from '../components/common/RiotDisclaimer';
 
 const SECTIONS = [
   {
@@ -47,6 +48,8 @@ export default function TermsPage() {
             {index < SECTIONS.length - 1 ? <Divider sx={{ mt: 3 }} /> : null}
           </Box>
         ))}
+
+        <RiotDisclaimer />
       </Container>
     </Box>
   );

@@ -33,7 +33,14 @@ export default function App() {
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/" element={<HomePage />} />
-          <Route path="/search" element={<SearchPage />} />
+          <Route
+            path="/search"
+            element={
+              <ProtectedRoute>
+                <SearchPage />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/posts/:postId" element={<PostDetailPage />} />
           <Route
             path="/posts/new"

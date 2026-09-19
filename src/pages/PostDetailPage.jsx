@@ -10,12 +10,13 @@ import Chip from '@mui/material/Chip';
 import Link from '@mui/material/Link';
 import IconButton from '@mui/material/IconButton';
 import FlagOutlinedIcon from '@mui/icons-material/FlagOutlined';
-import { getChampionById, getChampionIconUrl } from '../lib/mockRiotApi';
+import { getChampionIconUrl } from '../lib/ddragon';
 import { fetchPostById, fetchComments, createComment } from '../lib/posts';
 import { formatRelativeTime } from '../utils/format-date';
 import { formatDuration } from '../utils/format-duration';
 import useAuth from '../hooks/useAuth';
 import useDdragonVersion from '../hooks/useDdragonVersion';
+import useChampions from '../hooks/useChampions';
 import CommentList from '../components/post/CommentList';
 import CommentForm from '../components/post/CommentForm';
 import ReactionBar from '../components/post/ReactionBar';
@@ -26,6 +27,7 @@ export default function PostDetailPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const version = useDdragonVersion();
+  const { getChampionById } = useChampions();
 
   const [post, setPost] = useState(null);
   const [comments, setComments] = useState([]);

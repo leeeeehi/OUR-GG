@@ -10,6 +10,7 @@ import Link from '@mui/material/Link';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Checkbox from '@mui/material/Checkbox';
 import { signUp } from '../lib/auth';
+import { getRiotErrorMessage } from '../lib/riotApi';
 import { isAtLeast14YearsOld, isValidEmail, isValidPassword } from '../utils/validators';
 
 export default function SignupPage() {
@@ -61,6 +62,8 @@ export default function SignupPage() {
         setError('이미 연동된 Riot ID입니다. 다른 계정과 연동되어 있는지 확인해주세요.');
       } else if (signUpError.message === 'DUPLICATE_NICKNAME') {
         setError('이미 사용 중인 닉네임입니다.');
+      } else if (signUpError.message?.startsWith('RIOT_')) {
+        setError(getRiotErrorMessage({ code: signUpError.message }));
       } else if (signUpError.message?.includes('already')) {
         setError('이미 가입된 이메일입니다.');
       } else {

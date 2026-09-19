@@ -17,6 +17,7 @@ import DialogActions from '@mui/material/DialogActions';
 import useAuth from '../hooks/useAuth';
 import { upsertUserSettings } from '../lib/settings';
 import { updatePassword, relinkRiotId, withdrawAccount, signOut } from '../lib/auth';
+import { getRiotErrorMessage } from '../lib/riotApi';
 import { isValidPassword } from '../utils/validators';
 
 const NOTIFY_FIELDS = [
@@ -33,6 +34,7 @@ export default function SettingsPage() {
   const [riotTagLine, setRiotTagLine] = useState(profile?.riot_tag_line ?? '');
   const [riotError, setRiotError] = useState('');
   const [riotNotice, setRiotNotice] = useState('');
+  const [isRelinking, setIsRelinking] = useState(false);
 
   const [newPassword, setNewPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
@@ -58,13 +60,22 @@ export default function SettingsPage() {
       setRiotError('소환사명과 태그를 모두 입력해주세요.');
       return;
     }
+    setIsRelinking(true);
     const { data, error } = await relinkRiotId({ userId: user.id, riotGameName: riotGameName.trim(), riotTagLine: riotTagLine.trim() });
+    setIsRelinking(false);
     if (error) {
-      setRiotError(error.message === 'DUPLICATE_RIOT_ID' ? '이미 다른 계정과 연동된 Riot ID입니다.' : '재연동에 실패했습니다.');
+      setRiotError(
+        error.message === 'DUPLICATE_RIOT_ID'
+          ? '이미 다른 계정과 연동된 Riot ID입니다.'
+          : getRiotErrorMessage({ code: error.message }, '재연동에 실패했습니다.'),
+      );
       return;
     }
     // 마이페이지/전적 공유 화면이 새 Riot ID를 바로 쓰도록 전역 프로필도 갱신한다
     setProfile(data);
+    // Riot이 알려준 정식 표기(대소문자)로 입력칸도 맞춘다
+    setRiotGameName(data.riot_game_name);
+    setRiotTagLine(data.riot_tag_line);
     setRiotNotice('Riot ID가 재연동되었습니다.');
   }
 
@@ -143,7 +154,7 @@ export default function SettingsPage() {
             <TextField label="소환사명" value={riotGameName} onChange={(e) => setRiotGameName(e.target.value)} sx={{ flex: 2 }} />
             <TextField label="태그" value={riotTagLine} onChange={(e) => setRiotTagLine(e.target.value)} sx={{ flex: 1 }} />
           </Box>
-          <Button type="submit" variant="outlined" sx={{ alignSelf: 'flex-start' }}>
+          <Button type="submit" variant="outlined" disabled={isRelinking} sx={{ alignSelf: 'flex-start' }}>
             재연동
           </Button>
         </Box>

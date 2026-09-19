@@ -2,14 +2,15 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Radio from '@mui/material/Radio';
 import ButtonBase from '@mui/material/ButtonBase';
-import { getChampionById, getChampionIconUrl } from '../../lib/mockRiotApi';
+import { getChampionIconUrl } from '../../lib/ddragon';
 import { formatRelativeTime } from '../../utils/format-date';
 import { formatDuration } from '../../utils/format-duration';
 import useDdragonVersion from '../../hooks/useDdragonVersion';
+import useChampions from '../../hooks/useChampions';
 
 /**
  * Props:
- * @param {object} match - 목업 최근 매치 요약 데이터 [Required]
+ * @param {object} match - 최근 매치 요약 데이터 (riot-proxy recentMatches 응답 항목) [Required]
  * @param {boolean} selected - 현재 선택된 매치인지 여부 [Required]
  * @param {function} onSelect - 클릭 시 호출되는 선택 핸들러 [Required]
  *
@@ -18,6 +19,7 @@ import useDdragonVersion from '../../hooks/useDdragonVersion';
  */
 export default function MatchPickerItem({ match, selected, onSelect }) {
   const version = useDdragonVersion();
+  const { getChampionById } = useChampions();
   const champion = getChampionById(match.championId);
 
   return (

@@ -6,10 +6,11 @@ import Avatar from '@mui/material/Avatar';
 import Typography from '@mui/material/Typography';
 import Chip from '@mui/material/Chip';
 import Link from '@mui/material/Link';
-import { getChampionById, getChampionIconUrl } from '../../lib/mockRiotApi';
+import { getChampionIconUrl } from '../../lib/ddragon';
 import { formatRelativeTime } from '../../utils/format-date';
 import { formatDuration } from '../../utils/format-duration';
 import useDdragonVersion from '../../hooks/useDdragonVersion';
+import useChampions from '../../hooks/useChampions';
 import ReactionBar from './ReactionBar';
 
 /**
@@ -22,6 +23,7 @@ import ReactionBar from './ReactionBar';
 export default function PostCard({ post }) {
   const navigate = useNavigate();
   const version = useDdragonVersion();
+  const { getChampionById } = useChampions();
   const champion = getChampionById(post.champion_id);
   const kda = ((post.kills + post.assists) / Math.max(1, post.deaths)).toFixed(2);
 

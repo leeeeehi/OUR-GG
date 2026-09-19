@@ -1,6 +1,7 @@
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import { getChampionById, getChampionIconUrl } from '../../lib/mockRiotApi';
+import { getChampionIconUrl } from '../../lib/ddragon';
+import useChampions from '../../hooks/useChampions';
 
 /**
  * Props:
@@ -12,6 +13,7 @@ import { getChampionById, getChampionIconUrl } from '../../lib/mockRiotApi';
  * <HighlightRow label="최고 딜량" post={post} version={version} />
  */
 export default function HighlightRow({ label, post, version }) {
+  const { getChampionById } = useChampions();
   const champion = getChampionById(post.champion_id);
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 0.75 }}>

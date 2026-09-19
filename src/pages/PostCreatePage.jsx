@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
@@ -6,47 +6,69 @@ import Typography from '@mui/material/Typography';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 import Alert from '@mui/material/Alert';
+import CircularProgress from '@mui/material/CircularProgress';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import ToggleButton from '@mui/material/ToggleButton';
-import { getRecentMatches, getMatchDetail } from '../lib/mockRiotApi';
-import { createPost } from '../lib/posts';
+import { getRecentMatches, createPostFromMatch, getRiotErrorMessage, isMockPuuid } from '../lib/riotApi';
 import useAuth from '../hooks/useAuth';
 import MatchPickerItem from '../components/post/MatchPickerItem';
+import RiotLinkNotice from '../components/common/RiotLinkNotice';
+import EmptyState from '../components/ui/EmptyState';
 
 const MAX_CAPTION_LENGTH = 200;
 
 export default function PostCreatePage() {
   const navigate = useNavigate();
-  const { user, profile } = useAuth();
+  const { profile } = useAuth();
 
-  const matches = useMemo(
-    () => (profile ? getRecentMatches(profile.riot_game_name, profile.riot_tag_line, 10) : []),
-    [profile],
-  );
+  const puuid = profile?.puuid;
+  const isLinked = Boolean(puuid) && !isMockPuuid(puuid);
 
+  const [matches, setMatches] = useState([]);
+  const [isMatchesLoading, setIsMatchesLoading] = useState(isLinked);
+  const [matchesError, setMatchesError] = useState('');
   const [selectedMatchId, setSelectedMatchId] = useState('');
   const [caption, setCaption] = useState('');
   const [visibility, setVisibility] = useState('public');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  useEffect(() => {
+    if (!isLinked) return undefined;
+
+    let active = true;
+    setIsMatchesLoading(true);
+    setMatchesError('');
+    getRecentMatches(puuid, 10)
+      .then((list) => {
+        if (active) setMatches(list);
+      })
+      .catch((err) => {
+        if (active) setMatchesError(getRiotErrorMessage(err, '최근 매치를 불러오지 못했습니다.'));
+      })
+      .finally(() => {
+        if (active) setIsMatchesLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [puuid, isLinked]);
+
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
 
-    const match = matches.find((m) => m.matchId === selectedMatchId);
-    if (!match) {
+    if (!matches.some((m) => m.matchId === selectedMatchId)) {
       setError('공유할 매치를 선택해주세요.');
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const matchDetail = getMatchDetail(match.matchId, { ...match, gameName: profile.riot_game_name });
-      const post = await createPost({ userId: user.id, match, matchDetail, caption, visibility });
+      const post = await createPostFromMatch({ matchId: selectedMatchId, caption, visibility });
       navigate(`/posts/${post.id}`);
     } catch (err) {
-      setError(err?.code === '23505' ? '이미 등록한 매치입니다.' : '게시물 등록에 실패했습니다.');
+      setError(getRiotErrorMessage(err, '게시물 등록에 실패했습니다.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -59,20 +81,32 @@ export default function PostCreatePage() {
           전적 공유하기
         </Typography>
 
+        <RiotLinkNotice />
+
         <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           {error ? <Alert severity="error">{error}</Alert> : null}
 
           <Typography sx={{ fontSize: '0.9rem', fontWeight: 600 }}>내 최근 매치 중 선택</Typography>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-            {matches.map((match) => (
-              <MatchPickerItem
-                key={match.matchId}
-                match={match}
-                selected={selectedMatchId === match.matchId}
-                onSelect={setSelectedMatchId}
-              />
-            ))}
-          </Box>
+          {isMatchesLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : matchesError ? (
+            <Alert severity="warning">{matchesError}</Alert>
+          ) : isLinked && matches.length === 0 ? (
+            <EmptyState title="최근 매치가 없어요" description="최근에 플레이한 경기가 있어야 공유할 수 있어요" />
+          ) : (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              {matches.map((match) => (
+                <MatchPickerItem
+                  key={match.matchId}
+                  match={match}
+                  selected={selectedMatchId === match.matchId}
+                  onSelect={setSelectedMatchId}
+                />
+              ))}
+            </Box>
+          )}
 
           <TextField
             label="한 줄 소감 / 피드백 요청"
@@ -99,7 +133,7 @@ export default function PostCreatePage() {
             </ToggleButtonGroup>
           </Box>
 
-          <Button type="submit" variant="contained" size="large" disabled={isSubmitting}>
+          <Button type="submit" variant="contained" size="large" disabled={isSubmitting || !isLinked}>
             등록하기
           </Button>
         </Box>
