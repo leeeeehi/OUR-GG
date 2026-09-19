@@ -13,6 +13,8 @@ import { createPost } from '../lib/posts';
 import useAuth from '../hooks/useAuth';
 import MatchPickerItem from '../components/post/MatchPickerItem';
 
+const MAX_CAPTION_LENGTH = 200;
+
 export default function PostCreatePage() {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
@@ -76,6 +78,8 @@ export default function PostCreatePage() {
             label="한 줄 소감 / 피드백 요청"
             value={caption}
             onChange={(e) => setCaption(e.target.value)}
+            slotProps={{ htmlInput: { maxLength: MAX_CAPTION_LENGTH } }}
+            helperText={`${caption.length}/${MAX_CAPTION_LENGTH}`}
             multiline
             minRows={2}
             fullWidth

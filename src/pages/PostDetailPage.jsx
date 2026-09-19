@@ -32,10 +32,16 @@ export default function PostDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [commentError, setCommentError] = useState('');
   const [isReportOpen, setIsReportOpen] = useState(false);
 
   const load = useCallback(async () => {
+    // 다른 게시물로 이동했을 때 이전 게시물의 에러/데이터가 남지 않도록 초기화한다
     setLoading(true);
+    setError('');
+    setPost(null);
+    setComments([]);
+    setCommentError('');
     try {
       const [postData, commentData] = await Promise.all([fetchPostById(postId), fetchComments(postId)]);
       if (!postData) {
@@ -55,11 +61,17 @@ export default function PostDetailPage() {
     load();
   }, [load]);
 
+  /** @returns {Promise<boolean>} 등록 성공 여부 (실패 시 CommentForm이 입력 내용을 유지한다) */
   async function handleAddComment(content, timelineTag) {
+    setCommentError('');
     setIsSubmittingComment(true);
     try {
       const comment = await createComment({ postId, userId: user.id, content, timelineTag });
       setComments((prev) => [...prev, comment]);
+      return true;
+    } catch {
+      setCommentError('댓글을 등록하지 못했습니다. 잠시 후 다시 시도해주세요.');
+      return false;
     } finally {
       setIsSubmittingComment(false);
     }
@@ -186,7 +198,14 @@ export default function PostDetailPage() {
         <Typography sx={{ fontWeight: 700, mb: 1 }}>댓글/피드백</Typography>
         <CommentList comments={comments} />
         {user ? (
-          <CommentForm onSubmit={handleAddComment} isSubmitting={isSubmittingComment} />
+          <>
+            {commentError ? (
+              <Alert severity="error" sx={{ mt: 2 }}>
+                {commentError}
+              </Alert>
+            ) : null}
+            <CommentForm onSubmit={handleAddComment} isSubmitting={isSubmittingComment} />
+          </>
         ) : (
           <Alert severity="info" sx={{ mt: 2 }}>
             댓글을 작성하려면 로그인해주세요.

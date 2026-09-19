@@ -15,8 +15,11 @@ import useAuth from '../hooks/useAuth';
 
 export default function HomePage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const [tab, setTab] = useState(user ? 'following' : 'explore');
+  const { user, loading: isAuthLoading } = useAuth();
+  // 유저가 직접 고르기 전에는 로그인 여부에 따라 기본 탭을 정한다
+  // (새로고침 직후에는 user가 잠시 null이므로 초기값으로 고정하지 않는다)
+  const [selectedTab, setSelectedTab] = useState(null);
+  const tab = selectedTab ?? (user ? 'following' : 'explore');
 
   const followingFetch = async () => {
     if (!user) return [];
@@ -24,15 +27,16 @@ export default function HomePage() {
     return fetchFollowingFeed(following.map((f) => f.id));
   };
 
-  const { posts, loading, error } = usePosts(
-    tab === 'following' ? followingFetch : () => fetchPublicPosts(30),
-    [tab, user?.id],
+  const { posts, loading: isPostsLoading, error } = usePosts(
+    isAuthLoading ? async () => [] : tab === 'following' ? followingFetch : () => fetchPublicPosts(30),
+    [tab, user?.id, isAuthLoading],
   );
+  const loading = isAuthLoading || isPostsLoading;
 
   return (
     <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center', py: { xs: 2, md: 4 }, pb: { xs: 10, md: 10 } }}>
       <Container maxWidth="sm" sx={{ px: { xs: 2, md: 3 } }}>
-        <Tabs value={tab} onChange={(_e, v) => setTab(v)} sx={{ mb: 2 }}>
+        <Tabs value={tab} onChange={(_e, v) => setSelectedTab(v)} sx={{ mb: 2 }}>
           <Tab value="following" label="팔로잉" disabled={!user} />
           <Tab value="explore" label="탐색" />
         </Tabs>

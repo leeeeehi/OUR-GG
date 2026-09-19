@@ -98,7 +98,14 @@ export default function SignupPage() {
             required
             fullWidth
           />
-          <TextField label="닉네임" value={form.nickname} onChange={update('nickname')} required fullWidth />
+          <TextField
+            label="닉네임"
+            value={form.nickname}
+            onChange={update('nickname')}
+            slotProps={{ htmlInput: { maxLength: 20 } }}
+            required
+            fullWidth
+          />
           <TextField
             label="생년월일"
             type="date"

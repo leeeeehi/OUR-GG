@@ -27,7 +27,7 @@ const NOTIFY_FIELDS = [
 
 export default function SettingsPage() {
   const navigate = useNavigate();
-  const { user, profile, settings, setSettings } = useAuth();
+  const { user, profile, settings, setProfile, setSettings } = useAuth();
 
   const [riotGameName, setRiotGameName] = useState(profile?.riot_game_name ?? '');
   const [riotTagLine, setRiotTagLine] = useState(profile?.riot_tag_line ?? '');
@@ -58,11 +58,13 @@ export default function SettingsPage() {
       setRiotError('소환사명과 태그를 모두 입력해주세요.');
       return;
     }
-    const { error } = await relinkRiotId({ userId: user.id, riotGameName: riotGameName.trim(), riotTagLine: riotTagLine.trim() });
+    const { data, error } = await relinkRiotId({ userId: user.id, riotGameName: riotGameName.trim(), riotTagLine: riotTagLine.trim() });
     if (error) {
       setRiotError(error.message === 'DUPLICATE_RIOT_ID' ? '이미 다른 계정과 연동된 Riot ID입니다.' : '재연동에 실패했습니다.');
       return;
     }
+    // 마이페이지/전적 공유 화면이 새 Riot ID를 바로 쓰도록 전역 프로필도 갱신한다
+    setProfile(data);
     setRiotNotice('Riot ID가 재연동되었습니다.');
   }
 

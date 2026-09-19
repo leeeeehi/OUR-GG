@@ -53,16 +53,19 @@ async function insertProfile(userId, profile) {
   return settingsError;
 }
 
-/** 이미 사용 중인 닉네임 또는 Riot ID인지 확인한다 (가입 전 사전 검증용). */
+/**
+ * 이미 사용 중인 닉네임 또는 Riot ID인지 확인한다 (가입 전 사전 검증용).
+ * 닉네임에 쉼표 등이 들어가도 필터 파싱이 깨지지 않도록 .or() 문자열 조합 대신 조건별로 조회한다.
+ */
 async function findDuplicateProfile(nickname, riotGameName, riotTagLine) {
   const puuid = generateMockPuuid(riotGameName, riotTagLine);
-  const { data } = await supabase
-    .from('og_users')
-    .select('nickname, puuid')
-    .or(`nickname.eq.${nickname},puuid.eq.${puuid}`)
-    .limit(1);
-  if (!data || data.length === 0) return null;
-  return data[0].puuid === puuid ? 'riotId' : 'nickname';
+  const [puuidResult, nicknameResult] = await Promise.all([
+    supabase.from('og_users').select('id').eq('puuid', puuid).limit(1),
+    supabase.from('og_users').select('id').eq('nickname', nickname).limit(1),
+  ]);
+  if (puuidResult.data?.length) return 'riotId';
+  if (nicknameResult.data?.length) return 'nickname';
+  return null;
 }
 
 /**
@@ -122,9 +125,13 @@ export async function ensureProfile(user) {
   return insertError ? null : { id: user.id };
 }
 
+/** 화면에서 사용하는 프로필 컬럼. 생년월일·약관 동의 시각 같은 민감 정보는 조회하지 않는다. */
+const PROFILE_COLUMNS =
+  'id, nickname, profile_image_url, bio, riot_game_name, riot_tag_line, puuid, riot_region, riot_verified, summoner_level, tier, rank, league_points, deleted_at, created_at, updated_at';
+
 /** @param {string} userId - 조회할 유저 id [Required] */
 export async function fetchProfile(userId) {
-  const { data, error } = await supabase.from('og_users').select('*').eq('id', userId).maybeSingle();
+  const { data, error } = await supabase.from('og_users').select(PROFILE_COLUMNS).eq('id', userId).maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -164,7 +171,7 @@ export async function relinkRiotId({ userId, riotGameName, riotTagLine }) {
       riot_verified: false,
     })
     .eq('id', userId)
-    .select()
+    .select(PROFILE_COLUMNS)
     .single();
   if (error) return { error };
   return { data };

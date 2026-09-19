@@ -30,6 +30,10 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+      # GitHub Pages는 존재하지 않는 경로에 404.html을 내려주므로, index.html을 복사해 두면
+      # /me, /posts/12 같은 경로로 직접 접속하거나 새로고침해도 SPA 라우터가 화면을 그린다
+      - name: SPA fallback (404.html)
+        run: cp dist/index.html dist/404.html
       - name: Setup Pages
         uses: actions/configure-pages@v4
       - name: Upload artifact
