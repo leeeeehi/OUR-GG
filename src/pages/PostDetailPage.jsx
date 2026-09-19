@@ -160,7 +160,8 @@ export default function PostDetailPage() {
 
         <Divider sx={{ my: 2 }} />
 
-        <Typography sx={{ fontWeight: 700, mb: 1 }}>전체 참가자 (10인)</Typography>
+        {/* 5:5 모드는 10명이지만 아레나 등 일부 모드는 참가자 수가 다르다 */}
+        <Typography sx={{ fontWeight: 700, mb: 1 }}>전체 참가자 ({detail?.participants?.length ?? 0}명)</Typography>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, mb: 3 }}>
           {(detail?.participants ?? []).map((p) => {
             const pChampion = getChampionById(p.championId);
