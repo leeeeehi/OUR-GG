@@ -11,7 +11,7 @@ import Badge from '@mui/material/Badge';
 import Box from '@mui/material/Box';
 import HomeIcon from '@mui/icons-material/Home';
 import SearchIcon from '@mui/icons-material/Search';
-import AddCircleIcon from '@mui/icons-material/AddCircle';
+import PeopleIcon from '@mui/icons-material/People';
 import PersonIcon from '@mui/icons-material/Person';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
@@ -22,7 +22,7 @@ import { fetchUnreadCount } from '../../lib/notifications';
 const TABS = [
   { value: '/', label: '홈', icon: <HomeIcon /> },
   { value: '/search', label: '검색', icon: <SearchIcon /> },
-  { value: '/posts/new', label: '전적공유', icon: <AddCircleIcon /> },
+  { value: '/friends', label: '친구', icon: <PeopleIcon /> },
   { value: '/me', label: '마이페이지', icon: <PersonIcon /> },
 ];
 

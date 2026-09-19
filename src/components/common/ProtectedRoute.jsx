@@ -8,7 +8,7 @@ import useAuth from '../../hooks/useAuth';
  * @param {React.ReactNode} children - 로그인 시에만 보여줄 화면 [Required]
  *
  * Example usage:
- * <ProtectedRoute><PostCreatePage /></ProtectedRoute>
+ * <ProtectedRoute><HomePage /></ProtectedRoute>
  */
 export default function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();

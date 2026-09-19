@@ -1,22 +1,24 @@
 /**
- * Riot API 클라이언트. 브라우저에서 Riot API를 직접 호출할 수 없으므로(키 노출/CORS)
- * Supabase Edge Function(riot-proxy)을 통해서만 호출한다. Riot API 키는 서버 시크릿에만 있다.
+ * 전적 API 클라이언트. 브라우저에서 Riot API를 직접 호출할 수 없으므로(키 노출/CORS)
+ * Supabase Edge Function(match-api)을 통해서만 호출한다. Riot API 키는 서버 시크릿에만 있다.
+ * 팔로우/공개 설정/차단에 따른 조회 권한 판정도 서버에서 이루어진다.
  */
 import { supabase } from './supabase';
 
-const FUNCTION_NAME = 'riot-proxy';
+const FUNCTION_NAME = 'match-api';
 const MOCK_PUUID_PREFIX = 'mock-puuid-';
+
+const RIOT_UNAVAILABLE_MESSAGE = 'Riot 서버에서 정보를 가져오지 못했습니다. 잠시 후 다시 시도해주세요.';
 
 const ERROR_MESSAGES = {
   RIOT_NOT_FOUND: '존재하지 않는 Riot ID입니다. 소환사명과 태그를 확인해주세요.',
   RIOT_RATE_LIMITED: '요청이 많아 잠시 후 다시 시도해주세요.',
-  RIOT_KEY_MISSING: 'Riot 서버에서 정보를 가져오지 못했습니다. 잠시 후 다시 시도해주세요.',
-  RIOT_KEY_INVALID: 'Riot 서버에서 정보를 가져오지 못했습니다. 잠시 후 다시 시도해주세요.',
-  RIOT_UNAVAILABLE: 'Riot 서버에서 정보를 가져오지 못했습니다. 잠시 후 다시 시도해주세요.',
-  RIOT_ID_NOT_LINKED: '설정에서 실제 Riot ID를 먼저 연동해주세요.',
-  NOT_YOUR_MATCH: '내가 참가한 경기만 공유할 수 있습니다.',
-  DUPLICATE_MATCH: '이미 등록한 매치입니다.',
-  PROFILE_REQUIRED: '프로필 정보가 필요합니다.',
+  RIOT_KEY_MISSING: RIOT_UNAVAILABLE_MESSAGE,
+  RIOT_KEY_INVALID: RIOT_UNAVAILABLE_MESSAGE,
+  RIOT_UNAVAILABLE: RIOT_UNAVAILABLE_MESSAGE,
+  RIOT_ID_NOT_LINKED: '아직 Riot ID를 연동하지 않은 사용자입니다.',
+  MATCH_HIDDEN: '비공개 처리된 경기입니다.',
+  USER_NOT_FOUND: '존재하지 않는 사용자입니다.',
   BAD_REQUEST: '요청 정보가 올바르지 않습니다.',
 };
 
@@ -65,7 +67,7 @@ async function invokeRiot(action, payload = {}) {
 }
 
 /**
- * Riot ID가 실제로 존재하는지 확인하고 puuid와 정식 표기(대소문자)를 돌려준다.
+ * Riot ID가 실제로 존재하는지 확인하고 puuid와 정식 표기(대소문자)를 돌려준다. (가입용, 비로그인 허용)
  * @param {string} gameName - 소환사명 [Required]
  * @param {string} tagLine - 태그 [Required]
  * @returns {Promise<{ puuid: string, gameName: string, tagLine: string }>}
@@ -75,27 +77,41 @@ export function lookupRiotId(gameName, tagLine) {
 }
 
 /**
- * 소환사명#태그로 프로필(레벨/티어)과 최근 매치를 조회한다. (로그인 필요)
- * @returns {Promise<{ profile: object, recentMatches: Array<object> }>}
+ * 소환사명#태그로 프로필(레벨/티어)과 최근 매치를 조회한다.
+ * 우리 앱 유저의 Riot ID이고 그 유저가 전적을 비공개로 해두었다면 hidden이 true이고 매치는 비어 있다.
+ * @returns {Promise<{ profile: object, recentMatches: Array<object>, hidden: boolean, owner: object|null }>}
  */
 export function searchSummoner(gameName, tagLine) {
   return invokeRiot('search', { gameName, tagLine });
 }
 
 /**
- * @param {string} puuid - 조회할 소환사 puuid [Required]
- * @param {number} count - 가져올 매치 수 (최대 10) [Optional, 기본값: 10]
+ * 우리 앱 유저의 프로필과 최근 매치를 조회한다.
+ * @param {string} userId - 조회할 유저 id [Required]
+ * @returns {Promise<{ user: object, profile: object|null, recentMatches: Array<object>, hidden: boolean }>}
  */
-export async function getRecentMatches(puuid, count = 10) {
-  const { matches } = await invokeRiot('recentMatches', { puuid, count });
-  return matches;
+export function getUserMatches(userId) {
+  return invokeRiot('userMatches', { userId });
 }
 
 /**
- * 내가 참가한 경기를 게시물로 등록한다. 전적 수치는 서버가 Riot 원본으로 저장한다.
- * @param {object} params - { matchId, caption, visibility } [Required]
+ * 나와 팔로우한 친구들의 최근 전적 카드 목록.
+ * @returns {Promise<{ cards: Array<object>, followingCount: number, hiddenCount: number }>}
  */
-export async function createPostFromMatch({ matchId, caption, visibility }) {
-  const { post } = await invokeRiot('createPost', { matchId, caption, visibility });
-  return post;
+export function getFriendsFeed() {
+  return invokeRiot('friendsFeed');
+}
+
+/**
+ * 경기 상세(참가자 지표, 팀 합계)와 댓글/리액션 가능 여부.
+ * @param {string} matchId - 예: KR_8386059145 [Required]
+ * @returns {Promise<{ match: object, appUsers: Array<object>, viewerIsPlayer: boolean, canInteract: boolean }>}
+ */
+export function getMatchDetail(matchId) {
+  return invokeRiot('matchDetail', { matchId });
+}
+
+/** 나와 팔로우한 친구들의 주간 KDA/딜량 랭킹과 최근 24시간 하이라이트. */
+export function getLeaderboard() {
+  return invokeRiot('leaderboard');
 }

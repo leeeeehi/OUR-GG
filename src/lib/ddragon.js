@@ -43,6 +43,16 @@ export function getProfileIconUrl(profileIconId, version = DDRAGON_FALLBACK_VERS
   return `${DDRAGON_BASE_URL}/cdn/${version}/img/profileicon/${profileIconId}.png`;
 }
 
+/**
+ * 아이템 아이콘. 아레나 전용 아이템처럼 Data Dragon에 없는 id는 이미지가 로드되지 않으므로 호출부에서 onError로 처리한다.
+ * @param {number} itemId - 아이템 id [Required]
+ * @param {string} version - Data Dragon 버전 [Optional]
+ */
+export function getItemIconUrl(itemId, version = DDRAGON_FALLBACK_VERSION) {
+  if (!itemId) return undefined;
+  return `${DDRAGON_BASE_URL}/cdn/${version}/img/item/${itemId}.png`;
+}
+
 function readStoredChampions(version) {
   try {
     const raw = localStorage.getItem(`${CHAMPIONS_STORAGE_PREFIX}${version}`);

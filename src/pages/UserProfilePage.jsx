@@ -15,10 +15,11 @@ import Divider from '@mui/material/Divider';
 import { fetchProfile } from '../lib/auth';
 import { fetchFollowCounts, isFollowing as checkIsFollowing, followUser, unfollowUser } from '../lib/follows';
 import { fetchMyBlockedIds, blockUser, unblockUser } from '../lib/blocks';
-import { fetchPostsByUser } from '../lib/posts';
+import { getRiotErrorMessage } from '../lib/riotApi';
+import { formatTierLabel } from '../utils/match-format';
 import useAuth from '../hooks/useAuth';
-import usePosts from '../hooks/usePosts';
-import PostCard from '../components/post/PostCard';
+import useUserMatches from '../hooks/useUserMatches';
+import MatchList from '../components/match/MatchList';
 import EmptyState from '../components/ui/EmptyState';
 
 export default function UserProfilePage() {
@@ -33,7 +34,7 @@ export default function UserProfilePage() {
   const [error, setError] = useState('');
   const [isBlockConfirmOpen, setIsBlockConfirmOpen] = useState(false);
 
-  const { posts, loading: postsLoading } = usePosts(() => fetchPostsByUser(userId), [userId]);
+  const { data: matchData, loading: matchesLoading, error: matchesError } = useUserMatches(userId);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -119,9 +120,7 @@ export default function UserProfilePage() {
             <Typography sx={{ fontSize: '0.85rem', color: 'text.secondary' }}>
               {profile.riot_game_name}#{profile.riot_tag_line}
             </Typography>
-            {profile.tier ? (
-              <Chip size="small" sx={{ mt: 0.5 }} label={`${profile.tier} ${profile.rank ?? ''} ${profile.league_points ?? 0}LP`} />
-            ) : null}
+            {matchData?.profile ? <Chip size="small" sx={{ mt: 0.5 }} label={formatTierLabel(matchData.profile)} /> : null}
           </Box>
         </Box>
 
@@ -148,22 +147,23 @@ export default function UserProfilePage() {
 
         <Divider sx={{ mb: 2 }} />
 
-        <Typography sx={{ fontWeight: 700, mb: 2 }}>게시물</Typography>
+        <Typography sx={{ fontWeight: 700, mb: 2 }}>최근 전적</Typography>
 
         {blocked ? (
-          <EmptyState title="차단한 사용자입니다" description="차단을 해제하면 게시물이 다시 표시됩니다" />
-        ) : postsLoading ? (
+          <EmptyState title="차단한 사용자입니다" description="차단을 해제하면 전적이 다시 표시됩니다" />
+        ) : matchesLoading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
             <CircularProgress />
           </Box>
-        ) : posts.length === 0 ? (
-          <EmptyState title="게시물이 없어요" />
+        ) : matchesError ? (
+          <EmptyState
+            title={matchesError.code === 'RIOT_ID_NOT_LINKED' ? 'Riot ID를 아직 연동하지 않았어요' : '전적을 불러오지 못했어요'}
+            description={getRiotErrorMessage(matchesError)}
+          />
+        ) : matchData.hidden ? (
+          <EmptyState title="전적이 비공개예요" description="이 유저가 전적을 공개하지 않도록 설정했어요" />
         ) : (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {posts.map((post) => (
-              <PostCard key={post.id} post={post} />
-            ))}
-          </Box>
+          <MatchList matches={matchData.recentMatches} focusUserId={userId} />
         )}
 
         <Dialog open={isBlockConfirmOpen} onClose={() => setIsBlockConfirmOpen(false)}>

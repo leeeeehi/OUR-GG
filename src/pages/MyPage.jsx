@@ -10,18 +10,19 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Divider from '@mui/material/Divider';
 import Chip from '@mui/material/Chip';
 import useAuth from '../hooks/useAuth';
-import usePosts from '../hooks/usePosts';
-import { fetchPostsByUser } from '../lib/posts';
+import useUserMatches from '../hooks/useUserMatches';
 import { fetchFollowCounts } from '../lib/follows';
 import { signOut } from '../lib/auth';
-import PostCard from '../components/post/PostCard';
+import { getRiotErrorMessage, isMockPuuid } from '../lib/riotApi';
+import { formatTierLabel } from '../utils/match-format';
+import MatchList from '../components/match/MatchList';
 import EmptyState from '../components/ui/EmptyState';
 import RiotLinkNotice from '../components/common/RiotLinkNotice';
 
 export default function MyPage() {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
-  const { posts, loading } = usePosts(() => fetchPostsByUser(user.id), [user.id]);
+  const { data: matchData, loading, error: matchesError } = useUserMatches(user.id);
   const [counts, setCounts] = useState({ followerCount: 0, followingCount: 0 });
 
   useEffect(() => {
@@ -48,9 +49,7 @@ export default function MyPage() {
             <Typography sx={{ fontSize: '0.85rem', color: 'text.secondary' }}>
               {profile?.riot_game_name}#{profile?.riot_tag_line}
             </Typography>
-            {profile?.tier ? (
-              <Chip size="small" sx={{ mt: 0.5 }} label={`${profile.tier} ${profile.rank ?? ''} ${profile.league_points ?? 0}LP`} />
-            ) : null}
+            {matchData?.profile ? <Chip size="small" sx={{ mt: 0.5 }} label={formatTierLabel(matchData.profile)} /> : null}
           </Box>
         </Box>
 
@@ -77,24 +76,16 @@ export default function MyPage() {
 
         <Divider sx={{ mb: 2 }} />
 
-        <Typography sx={{ fontWeight: 700, mb: 2 }}>내가 올린 게시물</Typography>
+        <Typography sx={{ fontWeight: 700, mb: 2 }}>내 최근 전적</Typography>
 
-        {loading ? (
+        {isMockPuuid(profile?.puuid) ? null : loading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
             <CircularProgress />
           </Box>
-        ) : posts.length === 0 ? (
-          <EmptyState
-            title="아직 올린 게시물이 없어요"
-            actionLabel="전적 공유하기"
-            onAction={() => navigate('/posts/new')}
-          />
+        ) : matchesError ? (
+          <EmptyState title="전적을 불러오지 못했어요" description={getRiotErrorMessage(matchesError)} />
         ) : (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {posts.map((post) => (
-              <PostCard key={post.id} post={post} />
-            ))}
-          </Box>
+          <MatchList matches={matchData.recentMatches} focusUserId={user.id} />
         )}
       </Container>
     </Box>

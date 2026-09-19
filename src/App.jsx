@@ -7,8 +7,7 @@ import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import TermsPage from './pages/TermsPage';
 import HomePage from './pages/HomePage';
-import PostDetailPage from './pages/PostDetailPage';
-import PostCreatePage from './pages/PostCreatePage';
+import MatchDetailPage from './pages/MatchDetailPage';
 import MyPage from './pages/MyPage';
 import SearchPage from './pages/SearchPage';
 import FriendsPage from './pages/FriendsPage';
@@ -32,7 +31,14 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/terms" element={<TermsPage />} />
-          <Route path="/" element={<HomePage />} />
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <HomePage />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/search"
             element={
@@ -41,12 +47,11 @@ export default function App() {
               </ProtectedRoute>
             }
           />
-          <Route path="/posts/:postId" element={<PostDetailPage />} />
           <Route
-            path="/posts/new"
+            path="/matches/:matchId"
             element={
               <ProtectedRoute>
-                <PostCreatePage />
+                <MatchDetailPage />
               </ProtectedRoute>
             }
           />
@@ -66,7 +71,14 @@ export default function App() {
               </ProtectedRoute>
             }
           />
-          <Route path="/users/:userId" element={<UserProfilePage />} />
+          <Route
+            path="/users/:userId"
+            element={
+              <ProtectedRoute>
+                <UserProfilePage />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/notifications"
             element={

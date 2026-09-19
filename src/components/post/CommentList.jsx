@@ -14,7 +14,7 @@ import useAuth from '../../hooks/useAuth';
 
 /**
  * Props:
- * @param {Array} comments - og_comments 목록(+author 조인 데이터) [Required]
+ * @param {Array} comments - og_match_comments 목록(+author 조인 데이터) [Required]
  *
  * Example usage:
  * <CommentList comments={comments} />
@@ -63,7 +63,7 @@ export default function CommentList({ comments }) {
       <ReportDialog
         open={reportTargetId !== null}
         onClose={() => setReportTargetId(null)}
-        targetType="comment"
+        targetType="match_comment"
         targetId={reportTargetId}
       />
     </Box>

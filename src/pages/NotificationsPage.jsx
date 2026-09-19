@@ -14,8 +14,8 @@ import EmptyState from '../components/ui/EmptyState';
 
 const TYPE_TEXT = {
   follow: '님이 나를 팔로우했습니다',
-  comment: '님이 내 게시물에 댓글을 남겼습니다',
-  reaction: '님이 내 게시물에 반응을 남겼습니다',
+  comment: '님이 내 경기에 댓글을 남겼습니다',
+  reaction: '님이 내 경기에 반응을 남겼습니다',
 };
 
 export default function NotificationsPage() {
@@ -28,8 +28,8 @@ export default function NotificationsPage() {
   }, [user.id]);
 
   function handleClick(notification) {
-    if (notification.target_post_id) {
-      navigate(`/posts/${notification.target_post_id}`);
+    if (notification.target_match_id) {
+      navigate(`/matches/${notification.target_match_id}?focus=${notification.receiver_id}`);
     } else {
       navigate(`/users/${notification.actor_id}`);
     }

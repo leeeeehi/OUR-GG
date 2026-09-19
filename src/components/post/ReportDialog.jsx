@@ -14,11 +14,11 @@ import useAuth from '../../hooks/useAuth';
  * Props:
  * @param {boolean} open - 다이얼로그 표시 여부 [Required]
  * @param {function} onClose - 닫기 핸들러 [Required]
- * @param {string} targetType - 'post' 또는 'comment' [Required]
+ * @param {string} targetType - 신고 대상 종류 ('match_comment') [Required]
  * @param {number|string} targetId - 신고 대상 id [Required]
  *
  * Example usage:
- * <ReportDialog open={open} onClose={handleClose} targetType="post" targetId={post.id} />
+ * <ReportDialog open={open} onClose={handleClose} targetType="match_comment" targetId={comment.id} />
  */
 export default function ReportDialog({ open, onClose, targetType, targetId }) {
   const { user } = useAuth();
@@ -43,7 +43,7 @@ export default function ReportDialog({ open, onClose, targetType, targetId }) {
       await reportContent({ reporterId: user.id, targetType, targetId, reason: reason.trim() });
       setDone(true);
     } catch (err) {
-      setError(err?.code === '23505' ? '이미 신고한 게시물/댓글입니다.' : '신고 접수에 실패했습니다.');
+      setError(err?.code === '23505' ? '이미 신고한 댓글입니다.' : '신고 접수에 실패했습니다.');
     } finally {
       setIsSubmitting(false);
     }
@@ -51,7 +51,7 @@ export default function ReportDialog({ open, onClose, targetType, targetId }) {
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="xs" fullWidth>
-      <DialogTitle>{targetType === 'post' ? '게시물 신고' : '댓글 신고'}</DialogTitle>
+      <DialogTitle>댓글 신고</DialogTitle>
       <DialogContent>
         {done ? (
           <Alert severity="success">신고가 접수되었습니다.</Alert>

@@ -47,6 +47,11 @@ export default function SettingsPage() {
     setSettings(updated);
   }
 
+  async function handleShareMatchesToggle(checked) {
+    const updated = await upsertUserSettings(user.id, { share_matches: checked });
+    setSettings(updated);
+  }
+
   async function handleThemeToggle(checked) {
     const updated = await upsertUserSettings(user.id, { theme: checked ? 'dark' : 'light' });
     setSettings(updated);
@@ -129,6 +134,23 @@ export default function SettingsPage() {
             />
           ))}
         </Box>
+
+        <Divider sx={{ mb: 2 }} />
+
+        <Typography sx={{ fontWeight: 700, mb: 1 }}>공개 설정</Typography>
+        <FormControlLabel
+          control={
+            <Switch
+              checked={settings ? settings.share_matches !== false : true}
+              onChange={(e) => handleShareMatchesToggle(e.target.checked)}
+            />
+          }
+          label="내 전적을 팔로워에게 공개"
+          sx={{ mb: 0.5 }}
+        />
+        <Typography sx={{ fontSize: '0.8rem', color: 'text.secondary', mb: 2 }}>
+          끄면 팔로워의 홈 피드, 내 프로필, 검색 결과에서 내 전적이 보이지 않고 내 경기에는 댓글을 받을 수 없어요.
+        </Typography>
 
         <Divider sx={{ mb: 2 }} />
 
